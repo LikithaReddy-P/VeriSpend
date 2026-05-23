@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, ArrowRight, RotateCcw } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StepProgress } from "@/components/audit/step-progress";
 import { ToolsStep } from "@/components/audit/steps/tools-step";
@@ -11,8 +12,9 @@ import { ToolDetailsStep } from "@/components/audit/steps/tool-details-step";
 import { TeamStep } from "@/components/audit/steps/team-step";
 import { UseCaseStep } from "@/components/audit/steps/use-case-step";
 import { ReviewStep } from "@/components/audit/steps/review-step";
-import { SuccessStep } from "@/components/audit/steps/success-step";
 import { Container } from "@/components/layout/container";
+import { auditInputFromForm, runAuditEngine } from "@/lib/audit/engine";
+import { saveAuditResult } from "@/lib/audit/result-storage";
 import { AUDIT_STEPS } from "@/lib/audit/constants";
 import {
   auditFormSchema,
@@ -41,10 +43,12 @@ const stepSchemas = [
 ] as const;
 
 export function AuditWizard() {
+  const router = useRouter();
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState<"forward" | "back">("forward");
   const [isHydrated, setIsHydrated] = useState(false);
-  const [isComplete, setIsComplete] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const form = useForm<AuditFormValues>({
     resolver: zodResolver(auditFormSchema),
@@ -65,7 +69,7 @@ export function AuditWizard() {
   }, [reset]);
 
   useEffect(() => {
-    if (!isHydrated || isComplete) return;
+    if (!isHydrated || isSubmitting) return;
 
     const timeout = setTimeout(() => {
       saveAuditDraft({
@@ -76,7 +80,7 @@ export function AuditWizard() {
     }, 400);
 
     return () => clearTimeout(timeout);
-  }, [values, step, isHydrated, isComplete, getValues]);
+  }, [values, step, isHydrated, isSubmitting, getValues]);
 
   const goToStep = useCallback((next: number, dir: "forward" | "back") => {
     setDirection(dir);
@@ -115,40 +119,36 @@ export function AuditWizard() {
     if (step > 0) goToStep(step - 1, "back");
   };
 
-  const onSubmit = handleSubmit(() => {
-    clearAuditDraft();
-    setIsComplete(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  const onSubmit = handleSubmit(async (formValues) => {
+    setSubmitError(null);
+    setIsSubmitting(true);
+
+    try {
+      const input = auditInputFromForm(formValues);
+      const result = runAuditEngine(input);
+      saveAuditResult(result);
+      clearAuditDraft();
+      router.push("/audit/results");
+    } catch {
+      setSubmitError(
+        "Something went wrong while running your audit. Please try again."
+      );
+      setIsSubmitting(false);
+    }
   });
 
   const handleReset = () => {
     clearAuditDraft();
     reset(defaultAuditFormValues);
     setStep(0);
-    setIsComplete(false);
+    setSubmitError(null);
     setDirection("forward");
   };
-
-  const totalSpend = (values.toolDetails ?? []).reduce(
-    (sum, t) => sum + (Number(t.monthlySpend) || 0),
-    0
-  );
 
   if (!isHydrated) {
     return (
       <Container className="flex min-h-[50vh] items-center justify-center py-20">
         <div className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-      </Container>
-    );
-  }
-
-  if (isComplete) {
-    return (
-      <Container className="max-w-lg py-12 sm:py-16">
-        <SuccessStep
-          totalSpend={totalSpend}
-          toolCount={values.toolDetails?.length ?? 0}
-        />
       </Container>
     );
   }
@@ -185,6 +185,15 @@ export function AuditWizard() {
             {step === 4 && <ReviewStep />}
           </div>
 
+          {submitError && (
+            <p
+              className="mt-8 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+              role="alert"
+            >
+              {submitError}
+            </p>
+          )}
+
           <div className="mt-10 flex flex-col-reverse gap-3 border-t border-border/60 pt-8 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex gap-2">
               {step > 0 ? (
@@ -206,9 +215,22 @@ export function AuditWizard() {
             </div>
 
             {isLastStep ? (
-              <Button type="submit" className="sm:min-w-[160px]">
-                Submit audit
-                <ArrowRight className="size-4" />
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="sm:min-w-[160px]"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" />
+                    Analyzing…
+                  </>
+                ) : (
+                  <>
+                    Submit audit
+                    <ArrowRight className="size-4" />
+                  </>
+                )}
               </Button>
             ) : (
               <Button
