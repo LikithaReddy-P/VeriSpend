@@ -14,6 +14,7 @@ import { UseCaseStep } from "@/components/audit/steps/use-case-step";
 import { ReviewStep } from "@/components/audit/steps/review-step";
 import { Container } from "@/components/layout/container";
 import { auditInputFromForm, runAuditEngine } from "@/lib/audit/engine";
+import { persistAuditResult } from "@/lib/audit/persist";
 import { saveAuditResult } from "@/lib/audit/result-storage";
 import { AUDIT_STEPS } from "@/lib/audit/constants";
 import {
@@ -28,7 +29,6 @@ import {
 } from "@/lib/audit/schema";
 import {
   clearAuditDraft,
-  getInitialDraft,
   loadAuditDraft,
   saveAuditDraft,
 } from "@/lib/audit/storage";
@@ -126,13 +126,22 @@ export function AuditWizard() {
     try {
       const input = auditInputFromForm(formValues);
       const result = runAuditEngine(input);
-      saveAuditResult(result);
+      const persisted = await persistAuditResult(result);
+
+      saveAuditResult(result, persisted?.publicId);
       clearAuditDraft();
+
+      if (persisted) {
+        router.push(persisted.shareUrl);
+        return;
+      }
+
       router.push("/audit/results");
     } catch {
       setSubmitError(
         "Something went wrong while running your audit. Please try again."
       );
+    } finally {
       setIsSubmitting(false);
     }
   });

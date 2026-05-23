@@ -12,15 +12,25 @@ import {
   HIGH_SAVINGS_THRESHOLD_USD,
   LOW_SAVINGS_THRESHOLD_USD,
 } from "@/lib/audit/results-constants";
+import { ShareAuditBanner } from "@/components/audit/results/share-audit-banner";
 import type { AuditResult } from "@/lib/audit/engine/types";
 
 type AuditResultsViewProps = {
   result: AuditResult;
+  mode?: "owner" | "shared";
+  publicId?: string;
+  toolCount?: number;
 };
 
-export function AuditResultsView({ result }: AuditResultsViewProps) {
+export function AuditResultsView({
+  result,
+  mode = "owner",
+  publicId,
+  toolCount: toolCountProp,
+}: AuditResultsViewProps) {
   const { summary, recommendations, input } = result;
-  const toolCount = input.tools.length;
+  const toolCount = toolCountProp ?? input.tools.length;
+  const isShared = mode === "shared";
 
   const isOptimized =
     recommendations.length === 0 ||
@@ -38,14 +48,27 @@ export function AuditResultsView({ result }: AuditResultsViewProps) {
   return (
     <Container className="max-w-4xl py-8 sm:py-12">
       <div className="audit-step-transition mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <ButtonLink href="/audit" variant="outline" size="sm">
-          <ArrowLeft className="size-4" />
-          Edit inputs
-        </ButtonLink>
-        <p className="text-sm text-muted-foreground">Audited {auditedDate}</p>
+        {!isShared ? (
+          <ButtonLink href="/audit" variant="outline" size="sm">
+            <ArrowLeft className="size-4" />
+            Edit inputs
+          </ButtonLink>
+        ) : (
+          <ButtonLink href="/" variant="outline" size="sm">
+            <ArrowLeft className="size-4" />
+            VeriSpend home
+          </ButtonLink>
+        )}
+        <p className="text-sm text-muted-foreground">
+          {isShared ? "Shared audit" : "Your audit"} · {auditedDate}
+        </p>
       </div>
 
       <div className="audit-step-transition space-y-10">
+        {publicId && !isShared && (
+          <ShareAuditBanner publicId={publicId} />
+        )}
+
         <SavingsHero
           summary={summary}
           toolCount={toolCount}

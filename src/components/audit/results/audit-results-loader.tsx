@@ -11,21 +11,23 @@ import type { AuditResult } from "@/lib/audit/engine/types";
 type LoadState =
   | { status: "loading" }
   | { status: "error"; message: string }
-  | { status: "ready"; result: AuditResult };
+  | { status: "ready"; result: AuditResult; publicId?: string };
 
 export function AuditResultsLoader() {
   const [state, setState] = useState<LoadState>({ status: "loading" });
 
   useEffect(() => {
-    const result = loadAuditResult();
+    const stored = loadAuditResult();
 
-    if (!result) {
+    if (!stored) {
       setState({
         status: "error",
         message: "No audit results found. Complete the audit wizard first.",
       });
       return;
     }
+
+    const { result, publicId } = stored;
 
     if (!result.summary || !Array.isArray(result.recommendations)) {
       setState({
@@ -36,7 +38,7 @@ export function AuditResultsLoader() {
     }
 
     const timeout = window.setTimeout(() => {
-      setState({ status: "ready", result });
+      setState({ status: "ready", result, publicId });
     }, 300);
 
     return () => window.clearTimeout(timeout);
@@ -68,5 +70,11 @@ export function AuditResultsLoader() {
     );
   }
 
-  return <AuditResultsView result={state.result} />;
+  return (
+    <AuditResultsView
+      result={state.result}
+      publicId={state.publicId}
+      toolCount={state.result.input.tools.length}
+    />
+  );
 }

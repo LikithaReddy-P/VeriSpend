@@ -8,6 +8,17 @@ AI spend audits for modern teams. Finance-grade visibility into your AI tool sta
 - TypeScript
 - Tailwind CSS
 - shadcn/ui
+- Supabase (audit persistence)
+
+## Supabase setup
+
+1. Create a project at [supabase.com](https://supabase.com)
+2. Copy `.env.example` to `.env.local` and set:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+3. Run the migration in `supabase/migrations/001_audits.sql` via the SQL editor
+
+Completed audits are saved with a public ID and shareable at `/audit/[id]`. Only tool usage and savings data are stored — no email or company name.
 
 ## Getting started
 
