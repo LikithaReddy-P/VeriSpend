@@ -1,5 +1,4 @@
 import { Navbar } from "@/components/layout/navbar";
-import { Footer } from "@/components/layout/footer";
 
 export default function AuditLayout({
   children,
@@ -9,8 +8,7 @@ export default function AuditLayout({
   return (
     <>
       <Navbar />
-      <main className="flex-1">{children}</main>
-      <Footer />
+      <main className="flex-1 bg-background">{children}</main>
     </>
   );
 }

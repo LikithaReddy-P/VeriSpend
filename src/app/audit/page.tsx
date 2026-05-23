@@ -1,18 +1,13 @@
-import { ArrowLeft } from "lucide-react";
-import { ButtonLink } from "@/components/ui/button-link";
-import { Container } from "@/components/layout/container";
+import { AuditWizard } from "@/components/audit/audit-wizard";
 
-export default function AuditPlaceholderPage() {
+export default function AuditPage() {
   return (
-    <Container className="flex min-h-[60vh] flex-col items-center justify-center py-20 text-center">
-      <h1 className="text-2xl font-semibold tracking-tight">Audit flow coming soon</h1>
-      <p className="mt-3 max-w-md text-muted-foreground">
-        The spend audit wizard will live here. For now, explore the landing page.
-      </p>
-      <ButtonLink href="/" variant="outline" className="mt-8">
-        <ArrowLeft className="size-4" />
-        Back to home
-      </ButtonLink>
-    </Container>
+    <div className="relative min-h-[calc(100vh-8rem)]">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-hero-glow opacity-60"
+      />
+      <AuditWizard />
+    </div>
   );
 }
