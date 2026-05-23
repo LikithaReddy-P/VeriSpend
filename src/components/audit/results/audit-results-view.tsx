@@ -12,6 +12,7 @@ import {
   HIGH_SAVINGS_THRESHOLD_USD,
   LOW_SAVINGS_THRESHOLD_USD,
 } from "@/lib/audit/results-constants";
+import { LeadCaptureForm } from "@/components/audit/results/lead-capture-form";
 import { ShareAuditBanner } from "@/components/audit/results/share-audit-banner";
 import type { AuditResult } from "@/lib/audit/engine/types";
 
@@ -101,6 +102,10 @@ export function AuditResultsView({
               ))}
             </ul>
           </section>
+        )}
+
+        {publicId && (
+          <LeadCaptureForm auditPublicId={publicId} />
         )}
 
         <div className="flex flex-col items-center gap-4 border-t border-border/60 pt-10 sm:flex-row sm:justify-between">

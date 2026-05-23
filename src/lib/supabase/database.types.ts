@@ -30,6 +30,28 @@ export type AuditInsert = {
   created_at?: string;
 };
 
+export type LeadRow = {
+  id: string;
+  audit_public_id: string;
+  email: string;
+  company_name: string | null;
+  role: string | null;
+  team_size: number | null;
+  ip_hash: string | null;
+  created_at: string;
+};
+
+export type LeadInsert = {
+  id?: string;
+  audit_public_id: string;
+  email: string;
+  company_name?: string | null;
+  role?: string | null;
+  team_size?: number | null;
+  ip_hash?: string | null;
+  created_at?: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -37,6 +59,12 @@ export type Database = {
         Row: AuditRow;
         Insert: AuditInsert;
         Update: Partial<AuditInsert>;
+        Relationships: [];
+      };
+      leads: {
+        Row: LeadRow;
+        Insert: LeadInsert;
+        Update: Partial<LeadInsert>;
         Relationships: [];
       };
     };
